@@ -3,140 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editable Organizational Chart</title>
-    <script src="https://unpkg.com/gojs/release/go.js"></script>
+    <title>Organizational Chart</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gojs/2.3.13/go.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #myDiagramDiv { width: 100%; height: 500px; border: 1px solid black; }
+        .controls { margin-top: 20px; }
+        input, button { padding: 8px; margin: 5px; }
+    </style>
+</head>
+<body>
+
+    <h2>Organizational Chart</h2>
+    <div id="myDiagramDiv"></div>
+
+    <div class="controls">
+        <input type="text" id="nodeKey" placeholder="Node Key">
+        <input type="text" id="nodeLabel" placeholder="Node Label">
+        <input type="text" id="nodeParent" placeholder="Parent Key (optional)">
+        <button onclick="addNode()">Add Node</button>
+        <button onclick="editNode()">Edit Node</button>
+        <button onclick="deleteNode()">Delete Node</button>
+        <button onclick="saveChanges()">Save to GitHub</button>
+    </div>
+
     <script>
-        function init() {
-            var $ = go.GraphObject.make;
-            var myDiagram = $(go.Diagram, "myDiagramDiv", {
-                layout: $(go.TreeLayout, { angle: 90, layerSpacing: 50 })
-            });
+        let nodeDataArray = [];
+        let myDiagram;
 
-            // Define node template
-            myDiagram.nodeTemplate = $(go.Node, "Auto",
-                $(go.Shape, "Rectangle", { fill: "lightblue", stroke: "black" }),
-                $(go.TextBlock, 
-                    { margin: 8, editable: true }, // Make the text editable
-                    new go.Binding("text", "label").makeTwoWay()
-                ),
-                {
-                    contextMenu: $("ContextMenu",
-                        $("ContextMenuButton",
-                            $(go.TextBlock, "Add Node"),
-                            { click: (e, obj) => addNode(obj.part.adornedPart.data.key) }
-                        ),
-                        $("ContextMenuButton",
-                            $(go.TextBlock, "Delete Node"),
-                            { click: (e, obj) => deleteNode(obj.part.adornedPart.data.key) }
-                        )
-                    )
-                }
-            );
-
-            // Initial Data
-            var nodeDataArray = [
-                { key: "RegistrarGeneral", label: "Registrar General" },
-                { key: "RegistrarJudicialService", parent: "RegistrarGeneral", label: "Registrar Judicial Service" },
-                { key: "RegistrarAdmin", parent: "RegistrarGeneral", label: "Registrar Admin" },
-                { key: "DeputyRegistrarAccounts", parent: "RegistrarGeneral", label: "Deputy Registrar Accounts" },
-                { key: "AssistantRegistrarProtocol", parent: "RegistrarGeneral", label: "Assistant Registrar Protocol" },
-
-                { key: "Accountant", parent: "DeputyRegistrarAccounts", label: "Accountant" },
-                { key: "SeniorAdministrativeAssistantAccounts", parent: "DeputyRegistrarAccounts", label: "Senior Administrative Assistant" },
-                { key: "JuniorAdministrativeAssistantAccounts", parent: "DeputyRegistrarAccounts", label: "Junior Administrative Assistant" },
-                { key: "ComputerOperatorAccounts", parent: "DeputyRegistrarAccounts", label: "Computer Operator" },
-
-                { key: "DeputyRegistrarProcurement", parent: "RegistrarAdmin", label: "Deputy Registrar Procurement" },
-                { key: "LibrarianCumResearchOfficer", parent: "RegistrarAdmin", label: "Librarian cum Research Officer" },
-                { key: "AssistantLibrarian", parent: "LibrarianCumResearchOfficer", label: "Assistant Librarian" },
-                { key: "LibraryAssistants", parent: "AssistantLibrarian", label: "Library Assistants" },
-                
-                { key: "AssistantRegistrarEstablishment", parent: "RegistrarAdmin", label: "Assistant Registrar Establishment" },
-                { key: "SeniorAdministrativeAssistantEstablishment", parent: "AssistantRegistrarEstablishment", label: "Senior Administrative Assistant" },
-                { key: "JuniorAdministrativeAssistantEstablishment", parent: "AssistantRegistrarEstablishment", label: "Junior Administrative Assistant" },
-                { key: "TypistEstablishment", parent: "AssistantRegistrarEstablishment", label: "Typist" },
-                
-                { key: "SeniorAdministrativeAssistantProcur", parent: "DeputyRegistrarProcurement", label: "Senior Administrative Assistant" },
-                { key: "JuniorAdministrativeAssistantProcur", parent: "DeputyRegistrarProcurement", label: "Junior Administrative Assistant" },
-                { key: "CourtOfficers", parent: "RegistrarAdmin", label: "Court Officers" },
-                { key: "SeniorAdministrativeAssistantAdmin", parent: "RegistrarAdmin", label: "Senior Administrative Assistant (Recruitment)" },
-                { key: "JuniorAdministrativeAssistantAdmin", parent: "RegistrarAdmin", label: "Junior Administrative Assistant (Recruitment)" },
-                //{ key: "TypistAdmin", parent: "RegistrarAdmin", label: "Typist" },
-
-                { key: "JointRegistrarListing", parent: "RegistrarJudicialService", label: "Joint Registrar Listing" },
-                { key: "AssistantRegistrarII", parent: "JointRegistrarListing", label: "Assistant Registrar II" },
-                { key: "AssistantRegistrarFiling", parent: "JointRegistrarListing", label: "Assistant Registrar Filing" },
-
-                { key: "AssistantRegistrarEstablishmentJudicial", parent: "RegistrarJudicialService", label: "Assistant Registrar Establishment" },
-                { key: "SeniorAdministrativeAssistantJudicialEstablishment", parent: "AssistantRegistrarEstablishmentJudicial", label: "Senior Administrative Assistant" },
-                { key: "JuniorAdministrativeAssistantJudicialEstablishment", parent: "AssistantRegistrarEstablishmentJudicial", label: "Junior Administrative Assistant" },
-                { key: "TypistJudicialEstablishment", parent: "AssistantRegistrarEstablishmentJudicial", label: "Typist" },
-
-                { key: "DeputyRegistrarProcurementJudicial", parent: "RegistrarJudicialService", label: "Deputy Registrar Procurement" },
-                { key: "ManagerIT", parent: "RegistrarJudicialService", label: "Manager IT" },
-                { key: "SystemAnalyst", parent: "ManagerIT", label: "System Analyst" },
-                { key: "SystemOfficer", parent: "ManagerIT", label: "System Officer" },
-                { key: "SeniorAdministrativeAssistantIT", parent: "ManagerIT", label: "Senior Administrative Assistant" },
-                { key: "JuniorAdministrativeAssistantIT", parent: "ManagerIT", label: "Junior Administrative Assistant" },
-                { key: "ComputerOperatorIT", parent: "ManagerIT", label: "Computer Operator" },
-                { key: "TypistIT", parent: "ManagerIT", label: "Typist" },
-                { key: "SeniorAdministrativeAssistantProcurJud", parent: "DeputyRegistrarProcurementJudicial", label: "Senior Administrative Assistant" },
-                { key: "JuniorAdministrativeAssistantProcurJud", parent: "DeputyRegistrarProcurementJudicial", label: "Junior Administrative Assistant" },
-
-                { key: "SuperintendentJudicial", parent: "AssistantRegistrarII", label: "Superintendent" },
-                { key: "Superintendent", parent: "AssistantRegistrarFiling", label: "Superintendent" },
-                { key: "StampReporter", parent: "AssistantRegistrarII", label: "Stamp Reporter" },
-                { key: "StampReporterFiling", parent: "AssistantRegistrarFiling", label: "Stamp Reporter" },
-                { key: "CourtMastersJudicial", parent: "SuperintendentJudicial", label: "Court Masters" },
-                { key: "SeniorAdministrativeAssistantJudicial", parent: "SuperintendentJudicial", label: "Senior Administrative Assistant" },
-                { key: "JuniorAdministrativeAssistantJudicial", parent: "SuperintendentJudicial", label: "Junior Administrative Assistant" },
-                { key: "CourtMasters", parent: "Superintendent", label: "Court Masters" },
-                { key: "SeniorAdministrativeAssistant", parent: "Superintendent", label: "Senior Administrative Assistant" },
-                { key: "JuniorAdministrativeAssistant", parent: "Superintendent", label: "Junior Administrative Assistant" },
-
-                { key: "ProtocolOfficer", parent: "AssistantRegistrarProtocol", label: "Protocol Officer" },
-                { key: "AssistantProtocolOfficer", parent: "AssistantRegistrarProtocol", label: "Assistant Protocol Officer" },
-                { key: "SeniorAdministrativeAssistantProtocol", parent: "ProtocolOfficer", label: "Senior Administrative Assistant" },
-                { key: "JuniorAdministrativeAssistantProtocol", parent: "ProtocolOfficer", label: "Junior Administrative Assistant" },
-                { key: "SeniorAdministrativeAssistantAssistantProtocolOfficer", parent: "AssistantProtocolOfficer", label: "Senior Administrative Assistant" },
-                { key: "JuniorAdministrativeAssistantAssistantProtocolOfficer", parent: "AssistantProtocolOfficer", label: "Junior Administrative Assistant" }
-            ];
-            myDiagram.model = new go.TreeModel(nodeDataArray);
-
-            // Function to add a new node
-            function addNode(parentKey) {
-                var newKey = "Node" + Math.floor(Math.random() * 1000); // Unique ID
-                var newNode = { key: newKey, parent: parentKey, label: "New Node" };
-
-                myDiagram.startTransaction("Add Node");
-                myDiagram.model.addNodeData(newNode);
-                myDiagram.commitTransaction("Add Node");
-            }
-
-            // Function to delete a node and its children
-            function deleteNode(nodeKey) {
-                myDiagram.startTransaction("Delete Node");
-
-                var toDelete = [];
-                function collectChildren(key) {
-                    toDelete.push(key);
-                    myDiagram.model.nodeDataArray.forEach(n => {
-                        if (n.parent === key) collectChildren(n.key);
-                    });
-                }
-                collectChildren(nodeKey);
-
-                toDelete.forEach(key => {
-                    var node = myDiagram.findNodeForKey(key);
-                    if (node) myDiagram.model.removeNodeData(node.data);
-                });
-
-                myDiagram.commitTransaction("Delete Node");
+        // Load the organizational chart from GitHub
+        async function loadOrgChart() {
+            const url = "https://raw.githubusercontent.com/joshua-syiemlieh/Organogram/main/data.json";
+            try {
+                const response = await fetch(url);
+                nodeDataArray = await response.json();
+                initializeDiagram();
+            } catch (error) {
+                console.error("Error loading organization chart:", error);
             }
         }
+
+        function initializeDiagram() {
+            var $ = go.GraphObject.make;
+            myDiagram = $(go.Diagram, "myDiagramDiv", {
+                layout: $(go.TreeLayout, { angle: 90, layerSpacing: 35 })
+            });
+
+            myDiagram.nodeTemplate = $(
+                go.Node, "Auto",
+                $(go.Shape, "RoundedRectangle", { fill: "lightblue" }),
+                $(go.TextBlock, { margin: 10 }, new go.Binding("text", "label"))
+            );
+
+            myDiagram.model = new go.TreeModel(nodeDataArray);
+        }
+
+        function addNode() {
+            const key = document.getElementById("nodeKey").value.trim();
+            const label = document.getElementById("nodeLabel").value.trim();
+            const parent = document.getElementById("nodeParent").value.trim();
+
+            if (!key || !label) {
+                alert("Key and Label are required!");
+                return;
+            }
+
+            if (nodeDataArray.find(n => n.key === key)) {
+                alert("Key already exists!");
+                return;
+            }
+
+            let newNode = { key, label };
+            if (parent) newNode.parent = parent;
+            nodeDataArray.push(newNode);
+            myDiagram.model = new go.TreeModel(nodeDataArray);
+        }
+
+        function editNode() {
+            const key = document.getElementById("nodeKey").value.trim();
+            const newLabel = document.getElementById("nodeLabel").value.trim();
+
+            let node = nodeDataArray.find(n => n.key === key);
+            if (node) {
+                node.label = newLabel;
+                myDiagram.model = new go.TreeModel(nodeDataArray);
+            } else {
+                alert("Node not found!");
+            }
+        }
+
+        function deleteNode() {
+            const key = document.getElementById("nodeKey").value.trim();
+            nodeDataArray = nodeDataArray.filter(n => n.key !== key);
+            myDiagram.model = new go.TreeModel(nodeDataArray);
+        }
+
+        async function saveChanges() {
+            const repo = "joshua-syiemlieh/Organogram";
+            const filePath = "data.json";
+            const branch = "main";
+            const token = "your_github_personal_access_token"; // Store securely!
+
+            const url = `https://api.github.com/repos/${repo}/contents/${filePath}`;
+
+            try {
+                // Get the file's SHA hash
+                const response = await fetch(url, {
+                    headers: { Authorization: `token ${token}` }
+                });
+
+                const fileData = await response.json();
+                const sha = fileData.sha;
+
+                // Convert updated JSON to Base64
+                const updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(nodeDataArray, null, 2))));
+
+                // Push the changes to GitHub
+                const updateResponse = await fetch(url, {
+                    method: "PUT",
+                    headers: {
+                        Authorization: `token ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: "Update organization chart",
+                        content: updatedContent,
+                        sha,
+                        branch
+                    })
+                });
+
+                if (updateResponse.ok) {
+                    alert("Changes saved successfully!");
+                } else {
+                    throw new Error("Failed to update file");
+                }
+            } catch (error) {
+                console.error("Error saving changes:", error);
+                alert("Error saving changes!");
+            }
+        }
+
+        loadOrgChart();
     </script>
-</head>
-<body onload="init()">
-    <div id="myDiagramDiv" style="width: 100%; height: 600px; border: 1px solid black;"></div>
+
 </body>
 </html>
