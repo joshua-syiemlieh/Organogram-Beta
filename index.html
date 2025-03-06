@@ -33,31 +33,28 @@
 
         // Load the organizational chart from GitHub
         async function loadOrgChart() {
-    const repo = "joshua-syiemlieh/Organogram-Beta";
-    const filePath = "data.json";
-    const url = `https://api.github.com/repos/${repo}/contents/${filePath}`;
+            const repo = "joshua-syiemlieh/Organogram-Beta";
+            const filePath = "data.json";
+            const url = `https://api.github.com/repos/${repo}/contents/${filePath}`;
 
-    try {
-        const response = await fetch(url, {
-            headers: {
-                Accept: "application/vnd.github.v3+json"
+            try {
+                const response = await fetch(url, {
+                    headers: { Accept: "application/vnd.github.v3+json" }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`GitHub API error: ${response.statusText}`);
+                }
+
+                const fileData = await response.json();
+                const jsonData = JSON.parse(atob(fileData.content)); // Decode Base64 content
+
+                nodeDataArray = jsonData;
+                initializeDiagram();
+            } catch (error) {
+                console.error("Error loading organization chart:", error);
             }
-        });
-
-        if (!response.ok) {
-            throw new Error(`GitHub API error: ${response.statusText}`);
         }
-
-        const fileData = await response.json();
-        const jsonData = JSON.parse(atob(fileData.content)); // Decode Base64 content
-
-        nodeDataArray = jsonData;
-        initializeDiagram();
-    } catch (error) {
-        console.error("Error loading organization chart:", error);
-    }
-}
-
 
         function initializeDiagram() {
             var $ = go.GraphObject.make;
@@ -65,13 +62,27 @@
                 layout: $(go.TreeLayout, { angle: 90, layerSpacing: 35 })
             });
 
-            myDiagram.nodeTemplate = $(
-                go.Node, "Auto",
+            myDiagram.nodeTemplate = $(go.Node, "Auto",
+                { 
+                    click: function(e, obj) { nodeClicked(obj.part); } // Add click event
+                },
                 $(go.Shape, "RoundedRectangle", { fill: "lightblue" }),
                 $(go.TextBlock, { margin: 10 }, new go.Binding("text", "label"))
             );
 
             myDiagram.model = new go.TreeModel(nodeDataArray);
+        }
+
+        function nodeClicked(node) {
+            if (node !== null) {
+                let key = node.data.key;
+                let label = node.data.label;
+                let parent = node.data.parent || ""; // If no parent, set as empty
+
+                document.getElementById("nodeKey").value = key;
+                document.getElementById("nodeLabel").value = label;
+                document.getElementById("nodeParent").value = parent;
+            }
         }
 
         function addNode() {
