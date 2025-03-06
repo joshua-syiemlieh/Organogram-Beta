@@ -13,7 +13,7 @@
   { "key": "DeputyRegistrarProcurement", "parent": "RegistrarAdmin", "label": "Deputy Registrar Procurement" },
   { "key": "LibrarianCumResearchOfficer", "parent": "RegistrarAdmin", "label": "Librarian cum Research Officer" },
   { "key": "AssistantLibrarian", "parent": "LibrarianCumResearchOfficer", "label": "Assistant Librarian" },
-  { "key": "LibraryAssistants", "parent": "AssistantLibrarian", "label": "Library Assistants" },
+  { "key": "LibraryAssistants", "parent": "LibrarianCumResearchOfficer", "label": "Library Assistants" },
 
   { "key": "AssistantRegistrarEstablishment", "parent": "RegistrarAdmin", "label": "Assistant Registrar (Est)" },
   { "key": "SeniorAdministrativeAssistantEstablishment", "parent": "AssistantRegistrarEstablishment", "label": "SAA" },
