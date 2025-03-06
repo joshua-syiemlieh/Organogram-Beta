@@ -136,7 +136,7 @@
             try {
                 // Get the file's SHA hash
                 const response = await fetch(url, {
-                    headers: { Authorization: `token ${token}` }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
 
                 const fileData = await response.json();
